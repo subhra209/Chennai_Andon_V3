@@ -1,6 +1,6 @@
 #include "board.h"
 #include "config.h"
-#include "Keypad.h"
+#include "Keypad_driver.h"
 #include "lcd.h"
 #include "string.h"
 #include "ui.h"
@@ -32,7 +32,7 @@ const rom UINT8 *UI_MSG[]=
 		"QUALITY",
 		"METHODS",
 		"PRODUCTION",
-		"MATERIAL",
+		"MATERIAL SHORTAGE",
 		"PART NO:",
 		"PASSWORD:",
 		"ADMIN ACTIVITY:",
@@ -43,11 +43,14 @@ const rom UINT8 *UI_MSG[]=
 
 
 
-const rom UINT8 keyMap[MAX_KEYS ][MAX_CHAR_PER_KEY] = {
-													{'1','-','1','-','1'},{'2','A','B','C','2'},{'3','D','E','F','3'},{'\x0B','\x0B','\x0B','\x0B','\x0B'},
-													{'4','G','H','I','4'},{'5','J','K','L','5'},{'6','M','N','O','6'},{'\x0C','\x0C','\x0C','\x0C','\x0C'},
-													{'7','P','Q','R','S'},{'8','T','U','V','8'},{'9','W','X','Y','Z'},{'\x08','\x08','\x08','\x08','\x08'},
-													{'*','*','*','*','*'},{'0',' ','0',' ','0'},{'\x13','\x13','\x13','\x13','\x13'},{'\x0A','\x0A','\x0A','\x0A','\x0A'}
+const rom UINT8 keyMap[MAX_KEYS + 1][MAX_CHAR_PER_KEY] = {{0xFF,0xFF,0xFF,0xFF},
+													{'1','1','1','1'},{'2','A','B','C'},{'3','D','E','F'},
+													{'4','G','H','I'},{'5','J','K','L'},{'6','M','N','O'},
+													{'7','P','R','S'},{'8','T','U','V'},{'9','W','X','Y'},
+
+													{'\x08','\x08','\x08','\x08'},{'0','Q','Z','-'},{'\x0A','\x0A','\x0A','\x0A'}
+													
+													
 													
 													};
 
@@ -77,7 +80,8 @@ void UI_init(void)
 
 	LCD_setBackSpace('\x08');	//Indicates LCD driver "\x08" is the symbol for backspace
 
-	setUImsg(UI_MSG_STATION);
+	ui.state = UI_ISSUE;
+	setUImsg(UI_ISSUE);
 
 	clearUIBuffer();
 	clearUIInput();
@@ -93,7 +97,7 @@ void UI_task(void)
 	UINT8 duration, scancode;
 	UINT8 uimsg;
 
-	if(KEYPAD_read(&scancode, &duration) == FALSE)			//Check whether key has been pressed
+	if(GetDataFromKeypadBuffer(&scancode, &duration) == FALSE)			//Check whether key has been pressed
 	{
 		return;
 	}
@@ -189,91 +193,67 @@ void UI_task(void)
 
 		if( keypressed == '\x08')
 		{
-			if(ui.bufferIndex > 0 )
-			{
-				LCD_putChar(keypressed);
-				ui.bufferIndex--;
 
-			}
-		
-			else
-			{
-				
-				setUImsg(UI_MSG_STATION);
+				setUImsg(UI_MSG_ISSUE);
 				clearUIBuffer();
 				clearUIInput();
-				ui.state = UI_STATION;
-			}
-
+				ui.state = UI_ISSUE;
 		}
 
+		if( keypressed == '0')
+		{
+			if(ui.bufferIndex == 0 )
+			{
+
+				APP_acknowledgeIssues(openIssue.ID);
+				setUImsg(UI_MSG_ISSUE);
+				clearUIBuffer();
+				clearUIInput();
+				ui.state = UI_ISSUE;
+			}
+		}
 		else
 		{
+
 			switch( keypressed )
 			{
 	
 				case '1':
-				putUImsg(UI_MSG_SAFETY);
-	
+				putUImsg(UI_MSG_BREAKDOWN);
+				ui.input[ui.inputIndex]  = '0';
+				ui.inputIndex++;
 				ui.input[ui.inputIndex]  = '1';
 				ui.inputIndex++;
 	
 				ui.state = UI_BRK_QUA_MS;
 				break;
-
-
-				case '2':
-				putUImsg(UI_MSG_BREAKDOWN);
 	
+	
+				case '2':
+				putUImsg(UI_MSG_QUALITY);
+				ui.input[ui.inputIndex]  = '0';
+				ui.inputIndex++;
 				ui.input[ui.inputIndex]  = '2';
 				ui.inputIndex++;
 	
 				ui.state = UI_BRK_QUA_MS;
 				break;
-
-
+	
 				case '3':
-				putUImsg(UI_MSG_QUALITY);
-	
-				ui.input[ui.inputIndex]  = '3';
+				putUImsg(UI_MSG_MATERIAL_SHORTAGE);
+				ui.input[ui.inputIndex]  = '0';
+				ui.inputIndex++;
+				ui.input[ui.inputIndex]   = '3';
 				ui.inputIndex++;
 	
 				ui.state = UI_BRK_QUA_MS;
 				break;
-
-				case '4':
-				putUImsg(UI_MSG_METHODS);
 	
-				ui.input[ui.inputIndex]  = '4';
-				ui.inputIndex++;
-	
-				ui.state = UI_BRK_QUA_MS;
-				break;
-
-
-				case '5':
-				putUImsg(UI_MSG_PRODUCTION);
-	
-				ui.input[ui.inputIndex]  = '5';
-				ui.inputIndex++;
-	
-				ui.state = UI_BRK_QUA_MS;
-				break;
-
-
-				case '6':
-				putUImsg(UI_MSG_MATERIAL);
-	
-				ui.input[ui.inputIndex]  = '6';
-				ui.inputIndex++;
-	
-				ui.state = UI_BRK_QUA_MS;
-				break;
 	
 				default:
 				break;
-	
-			}
+			}	
+
 		}
 		
 		break;
@@ -359,30 +339,21 @@ void UI_task(void)
 		{
 			setUImsg(UI_MSG_ISSUE);
 			clearUIBuffer();
-			ui.inputIndex = 2;
+			clearUIInput();
 			ui.state = UI_ISSUE;
 
 		}
 
 		else if( keypressed == '\x0A')
 		{
-			if( ui.input[ui.inputIndex-1] == '6' )
-			{
-			
-				setUImsg(UI_MSG_PART_NO);
-				clearUIBuffer();
-				//clearUIInput();
-				ui.state = UI_PART_NO;
-			}
-			else
-			{
+
 				getData();
 				APP_raiseIssues( ui.input);
-				setUImsg(UI_MSG_STATION);
+				setUImsg(UI_MSG_ISSUE);
 				clearUIBuffer();
 				clearUIInput();
-				ui.state = UI_STATION;
-			}
+				ui.state = UI_ISSUE;
+			
 		}
 
 		break;
@@ -602,9 +573,7 @@ UINT8 mapKey(UINT8 scancode, UINT8 duration)
 		if((keypressed != '1')  && 
 			(keypressed != '2') && 
 			(keypressed != '3') && 
-			(keypressed != '4') && 
-			(keypressed != '5') &&
-			(keypressed != '6') &&
+			(keypressed != '0') && 
 			(keypressed != '\x08') && 
 			(keypressed !='\x0A')    ) 
 			keypressed = 0xFF;

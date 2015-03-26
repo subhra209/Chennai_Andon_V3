@@ -87,7 +87,7 @@ ISSUE_INFO issueInfo = {FALSE,0,0};
 LOG log = {0};
 #pragma idata
 
-static rom UINT16 timeout = (UINT16)150;
+static rom UINT16 timeout = (UINT16)600;
 
 /*------------------------------------------------------------------------------
 * Private Functions
@@ -514,12 +514,13 @@ void APP_resolveIssues(UINT8 id)
 	UINT8 *ptr;
 	far UINT8* data;
 
-
+/*
 								
 		if(ias.issues[id].state != ISSUE_RESOLVED )						//if it is raised
 			if(strcmp((INT8*)data,(INT8 *)ias.issues[id].data) == 0)		//if input matches
 				if(ias.issues[id].ackStatus == 1) 						//check whether acknowledged
 					return;												//if not return
+*/
 
 	data = ias.issues[id].data;
 
@@ -634,8 +635,11 @@ void APP_raiseIssues(far UINT8* data)
 
 	for(i = 0; i < MAX_ISSUES; i++)										//for each issue
 		if(ias.issues[i].state != ISSUE_RESOLVED )						//if it is raised
-			if(strcmp((INT8*)data,(INT8 *)ias.issues[i].data) == 0)		//if input matches				
-					return;												//do nothing
+			if(strcmp((INT8*)data,(INT8 *)ias.issues[i].data) == 0)		//if input matches	
+			{
+				APP_resolveIssues(i);
+				return;												//do nothing
+			}
 
 
 	for( i = 0 ; i < MAX_ISSUES ;i++)
@@ -867,21 +871,28 @@ void APP_acknowledgeIssues(UINT8 ID)
 	UINT8 i;
 	ias.issues[ID].ackStatus = 0;
 
-	updateLog(ias.issues[ID].data);
+//	updateLog(ias.issues[ID].data);
 
 	
 
 
-	Write_b_eep((ID*ISSUE_ENTRY_SIZE)+ISSUE_ACKSTATUS, ias.issues[ID].ackStatus);
-	Busy_eep();
-	ClrWdt();
+//	Write_b_eep((ID*ISSUE_ENTRY_SIZE)+ISSUE_ACKSTATUS, ias.issues[ID].ackStatus);
+//	Busy_eep();
+//	ClrWdt();
 
 	//APP_updateIssues(ias.issues[ID].data);
 
 	for( i = 0 ; i < MAX_ISSUES ;i++)
 	{
 		if( ias.issues[i].ackStatus == 1)
-			return;
+		{
+			ias.issues[i].ackStatus = 0 ;
+			Write_b_eep((i*ISSUE_ENTRY_SIZE)+ISSUE_ACKSTATUS, ias.issues[i].ackStatus);
+			Busy_eep();
+			ClrWdt();
+
+		}
+		//	return;
 	}
 	BUZZER = 0;
 			
@@ -934,7 +945,7 @@ INT8 issueResolved(far UINT8* data)
 
 	for(i = 0; i < MAX_ISSUES; i++)
 	{
-		if(ias.issues[i].state != ISSUE_RESOLVED && (ias.issues[i].ackStatus != 1) )
+		if(ias.issues[i].state != ISSUE_RESOLVED )// && (ias.issues[i].ackStatus != 1) )
 		{
 			if(strcmp((INT8*)data,(INT8 *)ias.issues[i].data) == 0)
 			{

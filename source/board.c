@@ -21,7 +21,7 @@
 
 
 #include "board.h"
-//#include "config.h"
+#include "config.h"
 #include "typedefs.h"
 
 
@@ -124,8 +124,20 @@ void BRD_init(void)
 	LCD_RW_DIR = PORT_OUT;
 	LCD_RS_DIR = PORT_OUT;
 
-	//KEYPAD PORT
-	KEYPAD_PORT = PORT_IN;
+	// Configure keypad input
+	KBD_ROW0_DIR = PORT_IN;
+	KBD_ROW1_DIR = PORT_IN;
+	KBD_ROW2_DIR = PORT_IN;
+	KBD_ROW3_DIR = PORT_IN;
+	KBD_COL0_DIR = PORT_OUT;
+	KBD_COL1_DIR = PORT_OUT;
+	KBD_COL2_DIR = PORT_OUT;
+	KBD_COL3_DIR = PORT_IN;
+	KBD_COL4_DIR = PORT_IN;
+	KBD_COL5_DIR = PORT_OUT;
+
+
+	KBD_COL5 = 0;
 
 	//LAMP CONTROL
 

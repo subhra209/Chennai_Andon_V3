@@ -35,6 +35,7 @@
 
 
 //KEYPAD Configuration
+//define INPUT_SIMULATION
 #define KEYPAD_BUFFER_LENGTH 	(20)
 //#define KEYPAD_TEST
 

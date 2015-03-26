@@ -23,6 +23,9 @@
 #include "app.h"
 #include "uart.h"
 #include "communication.h"
+#include "lcd.h"
+#include "keypad_driver.h"
+#include "ui.h"
 
 /*
 *------------------------------------------------------------------------------
@@ -175,7 +178,7 @@ void main(void)
 	TIMER0_init(TICK_PERIOD,0);							//initialize timer0
 
 
-	KEYPAD_init();
+	InitializeKeypad();
 	
 	APP_init();
 
@@ -198,7 +201,7 @@ void main(void)
 
 		if( keypadUpdateCount >= 8 )
 		{
-			KEYPAD_task();
+			UpdateKeypadTask();
 			keypadUpdateCount = 0;
 		}
 

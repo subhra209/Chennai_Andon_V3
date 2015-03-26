@@ -41,14 +41,6 @@
 *------------------------------------------------------------------------------
 */
 
-
-// HeartBeat Association
-#define		HEART_BEAT				PORTEbits.RE0			// high - OFF, Low - ON
-#define		HEART_BEAT_DIR			TRISEbits.TRISE0
-
-
-
-
 //  UART  Association
 
 #define 	SER1_TX					PORTCbits.RC6 		// serial transmit
@@ -72,41 +64,55 @@
 #define		LCD_D5_DIR				TRISDbits.TRISD5
 #define		LCD_D4					PORTDbits.RD4			
 #define		LCD_D4_DIR				TRISDbits.TRISD4
-#define		LCD_E					PORTDbits.RD3 			
-#define		LCD_E_DIR				TRISDbits.TRISD3
+#define		LCD_E					PORTDbits.RD1 			
+#define		LCD_E_DIR				TRISDbits.TRISD1
 #define		LCD_RW					PORTDbits.RD2 			
 #define		LCD_RW_DIR				TRISDbits.TRISD2
-#define		LCD_RS					PORTDbits.RD1			
-#define		LCD_RS_DIR				TRISDbits.TRISD1
+#define		LCD_RS					PORTDbits.RD3			
+#define		LCD_RS_DIR				TRISDbits.TRISD3
 
-/* Keypad Association */
-#define		KEYPAD_PORT				PORTB
-#define		KEYPAD_PORT_DIR			TRISB
-#define		KEYPAD_DEC_INT			PORTBbits.RB7		
-#define		KEYPAD_DEC_INT_DIR		TRISBbits.TRISB7
-#define		KEYPAD_BCD3				PORTBbits.RB3		
-#define		KEYPAD_BCD3_DIR			TRISBbits.TRISB3
-#define		KEYPAD_BCD2				PORTBbits.RB4		
-#define		KEYPAD_BCD2_DIR			TRISBbits.TRISB4
-#define		KEYPAD_BCD1				PORTBbits.RB2		
-#define		KEYPAD_BCD2_DI1			TRISBbits.TRISB2
-#define		KEYPAD_BCD0				PORTBbits.RB5		
-#define		KEYPAD_BCD2_DI0			TRISBbits.TRISB5
+#define	KBD_COL5				PORTCbits.RC2
+#define	KBD_COL5_DIR			TRISCbits.TRISC2
+#define	KBD_COL4				PORTCbits.RC1
+#define	KBD_COL4_DIR			TRISCbits.TRISC1
+#define	KBD_COL3				PORTEbits.RE1
+#define	KBD_COL3_DIR			TRISEbits.TRISE1	
+#define	KBD_COL2				PORTEbits.RE0	
+#define	KBD_COL2_DIR			TRISEbits.TRISE0	
+#define	KBD_COL1				PORTAbits.RA5	
+#define	KBD_COL1_DIR			TRISAbits.TRISA5	
+#define	KBD_COL0				PORTAbits.RA4
+#define	KBD_COL0_DIR			TRISAbits.TRISA4
 
-//Tower Lamp Association
+#define	KBD_ROW0				PORTBbits.RB2	
+#define	KBD_ROW0_DIR			TRISBbits.TRISB2	
+#define	KBD_ROW1				PORTAbits.RA1	
+#define	KBD_ROW1_DIR			TRISAbits.TRISA1	
+#define	KBD_ROW2				PORTAbits.RA2	
+#define	KBD_ROW2_DIR			TRISAbits.TRISA2	
+#define	KBD_ROW3				PORTAbits.RA3
+#define	KBD_ROW3_DIR			TRISAbits.TRISA3
 
-#define LAMP_GREEN						PORTAbits.RA0
-#define LAMP_GREEN_DIR					TRISAbits.TRISA0
 
-#define LAMP_YELLOW 						PORTAbits.RA1 
-#define LAMP_YELLOW_DIR					TRISAbits.TRISA1
+// Heart Beat 
+#define	HEART_BEAT				LATEbits.LATE2
+#define	HEART_BEAT_DIR			TRISEbits.TRISE2				
 
 
-#define LAMP_RED							PORTAbits.RA2
-#define LAMP_RED_DIR						TRISAbits.TRISA2
+// Buzzer O/P
+#define	BUZZER					LATDbits.LATD0
+#define	BUZZER_DIR				TRISDbits.TRISD0	
 
-#define BUZZER 						PORTAbits.RA3 
-#define BUZZER_DIR					TRISAbits.TRISA3
+
+#define LAMP_RED				LATBbits.LATB3
+#define LAMP_RED_DIR			TRISBbits.TRISB3
+
+#define LAMP_YELLOW				LATBbits.LATB4
+#define LAMP_YELLOW_DIR			TRISBbits.TRISB4
+
+#define LAMP_GREEN				LATBbits.LATB5
+#define LAMP_GREEN_DIR			TRISBbits.TRISB5
+
 
 	
 /*

@@ -1,38 +1,9 @@
-/*
-*------------------------------------------------------------------------------
-* keypad_driver.c
-*
-* keypad driver module.
-*
-* (C)2012 samslogix.
-*
-* The copyright notice above does not evidence any
-* actual or intended publication of such source code.
-*
-*------------------------------------------------------------------------------
-*/
 
-/*
-*------------------------------------------------------------------------------
-* File				: keypad_driver.c
-* Created by		: Sam
-* Last changed by	: Sam
-* Last changed		: 10/03/2012
-*------------------------------------------------------------------------------
-*
-* Revision 1.0 10/03/2012 Sam
-* Initial revision
-*
-*------------------------------------------------------------------------------
-*/
-/*
-*------------------------------------------------------------------------------
-* Include Files
-*------------------------------------------------------------------------------
-*/
+#include "board.h"
+#include "keypad_driver.h"
+#include "lcd.h"
 
-#include "keypad.h"
-#include "config.h"
+
 
 /*
 *------------------------------------------------------------------------------
@@ -46,7 +17,7 @@
 *------------------------------------------------------------------------------
 */
 
-
+#define KEYPAD_RECV_BUFF_LEN 	(6)
 
 /*
 *------------------------------------------------------------------------------
@@ -66,26 +37,15 @@
 *------------------------------------------------------------------------------
 */
 
-typedef struct _KEYPAD
-{
-	UINT8 buffer[KEYPAD_BUFFER_LENGTH];
-	UINT8 bufferIndex;
-	UINT8 dataIndex;
-	UINT8 debounceCount;	
-	UINT8 currentKey;
-	UINT8 keyCount;
-}KEYPAD;
-
-#pragma idata KEYPAD_DATA
-KEYPAD keypad = {0};
-
-static UINT8 keypadReceiveBuffer[KEYPAD_BUFFER_LENGTH + 1][2] = {0};
-static UINT8 kepadInReadIndex = 0;     	// Data in buffer that has been read
-static UINT8 keypadInWaitingIndex= 0;  // Data in buffer not yet read
+static UINT8 keypadReceiveBuffer[KEYPAD_RECV_BUFF_LEN + 1][2];
+static UINT8 kepadInReadIndex;     	// Data in buffer that has been read
+static UINT8 keypadInWaitingIndex;  // Data in buffer not yet read
 static UINT8 lastValidKey = KEYPAD_NO_NEW_DATA;
-volatile static UINT16 duration = 0; 
-static UINT8 oldKey =KEYPAD_NO_NEW_DATA ;
-#pragma idata 
+static UINT8 duration; 
+
+UINT8 Login = 0;
+UINT8 ViewIssues= 0;
+
 
 /*
 *------------------------------------------------------------------------------
@@ -106,7 +66,11 @@ static UINT8 oldKey =KEYPAD_NO_NEW_DATA ;
 */
 
 static BOOL scanKeypad(UINT8* const pkeyNormal);
-
+/*
+*------------------------------------------------------------------------------
+* Private Functions
+*------------------------------------------------------------------------------
+*/
 /*
 *------------------------------------------------------------------------------
 * Public Functions
@@ -123,23 +87,17 @@ static BOOL scanKeypad(UINT8* const pkeyNormal);
 * Output	: None
 *------------------------------------------------------------------------------
 */
-void KEYPAD_init(void)
+void InitializeKeypad(void)
 {
 	kepadInReadIndex = 0;
    	keypadInWaitingIndex = 0;
-
-	keypad.bufferIndex = 0;
-	keypad.dataIndex = 0;
-	keypad.debounceCount = 0;
-	keypad.currentKey = 0xFF;
-	keypad.keyCount = 0;
-
+	//Set the task up to run	
 	
 }
 
 /*
 *------------------------------------------------------------------------------
-* rom void UpdateKeypadTask(void)
+* void UpdateKeypadTask(void)
 *
 * Summary	: The function update the key pressed into keypad buffer
 *			  This must be schedule at approx every 50 - 200 ms .
@@ -149,7 +107,7 @@ void KEYPAD_init(void)
 * Output	: None
 *------------------------------------------------------------------------------
 */
-rom void KEYPAD_task(void)
+rom void UpdateKeypadTask(void)
 {
 	UINT8 currentKey, functionKey;
 
@@ -172,8 +130,8 @@ rom void KEYPAD_task(void)
    	// Load Keypad data into buffer
    	keypadReceiveBuffer[keypadInWaitingIndex][0] = currentKey;
 	keypadReceiveBuffer[keypadInWaitingIndex][1] = duration;
-
-   	if (keypadInWaitingIndex < KEYPAD_BUFFER_LENGTH)
+   	
+   	if(keypadInWaitingIndex < KEYPAD_RECV_BUFF_LEN)
     {
     	// Increment without overflowing buffer
       	keypadInWaitingIndex++;
@@ -181,26 +139,17 @@ rom void KEYPAD_task(void)
 	duration = 0;
 }
 
-
+//#define INPUT_SIMULATION
 
 #ifdef INPUT_SIMULATION
 
 #define NO_INPUTS  36
 
-static rom UINT16 Key[][2] = {{0x0,40},{0xf,50},
-
-								{0xd,50},{0xf,50},
-								{0x0,40},{0xf,50},
-/*
-								{0x1,50},{0xf,50},
-								{0x2,50},{0xf,50},
-								{0x2,50},{0x5,50},{0x4,50},{0xf,50},
-								{0x3,40},{0xf,30},
-								{0x3,40},{0xf,30},
-								{0x7,40},{0xf,30},{0xb,50},{0xc,30},
-								
+static rom UINT16 Key[][2] = {{0xd,40},{0xc,30},
+								{0x1,50},{0xc,50},
+								{0x1,50},{0x3,50},{0x1,50},{0x3,50},{0xc,50},
+								{0x1,40},{0xc,30},{0x4,50},{0xc,50},{0xd,50},{0xc,50},
 								{0xe,40},{0xe,30},{0xe,40},{0xc,30},
-
 								{0x1,50},{0xc,50},{0x3,50},{0xc,50},
 								{0x1,40},{0xc,30},{0x1,50},{0xc,50},{0x4,50},{0xc,50},
 								{0x1,40},{0xc,30},{0x1,50},{0xc,50},{0x5,50},{0xc,50},
@@ -209,15 +158,13 @@ static rom UINT16 Key[][2] = {{0x0,40},{0xf,50},
 								{0xc,40},{0x2,30},{0xb,50},{0x8,50},{0x1,50},{0xc,50},{0xc,50},
 								{0xb,40},{0xc,30},{0x5,50},{0x6,50},{0x3,50},{0xc,50},
 								
-								{0x01,50},{0x0c,50},{0x09,50},{0x0c,50},
+							{0x01,50},{0x0c,50},{0x09,50},{0x0c,50},
 							
-								{0x01,50},{0x02,50},{0x0c,50},{0x01,50},{0x0c,50},{0x03,50},{0x01,50},{0xc,50},
-								{0xb,50},{0x02,50},{0xc,50},{0x02,50},{0xc,50},{0x01,50},{0xc,50},
+							{0x01,50},{0x02,50},{0x0c,50},{0x01,50},{0x0c,50},{0x03,50},{0x01,50},{0xc,50},
+							{0xb,50},{0x02,50},{0xc,50},{0x02,50},{0xc,50},{0x01,50},{0xc,50},
 								{0x03,50},{0x01,50},{0x02,50},{0x03,50},{0x01,50},{0x02,50},{0x03,50},
-							  	{0x01,50},{0x02,50},{0x03,50},{0x01,50},{0x02,50},{0x03,50},{0x01,50},{0x02,50},{0x18,45},
-*/
+							  {0x01,50},{0x02,50},{0x03,50},{0x01,50},{0x02,50},{0x03,50},{0x01,50},{0x02,50},{0x18,45},
 								};
-
 UINT8 keyIndex = 0;
 UINT8 delayCount = 5;
 
@@ -234,7 +181,7 @@ UINT8 delayCount = 5;
 *			         0 - if no data in the buffer
 *------------------------------------------------------------------------------
 */
-BOOL KEYPAD_read(UINT8* const pkey, UINT8* pduration)
+BOOL GetDataFromKeypadBuffer(UINT8* const pkey, UINT8* pduration)
 {
 
 	if( keyIndex >= NO_INPUTS)
@@ -258,12 +205,11 @@ BOOL KEYPAD_read(UINT8* const pkey, UINT8* pduration)
 		keyIndex++;
 		return 1;
 	}	
-	//DelayMs(50);
+	DelayMs(50);
 	keyIndex++;
 	return 0;
 }
 #else
-
 /*
 *------------------------------------------------------------------------------
 * BOOL GetDataFromKeypadBuffer(UINT8* const pkeyNormal)
@@ -276,20 +222,33 @@ BOOL KEYPAD_read(UINT8* const pkey, UINT8* pduration)
 *			         0 - if no data in the buffer
 *------------------------------------------------------------------------------
 */
-BOOL KEYPAD_read(UINT8* const pkeyNormal,UINT8* pduration)
+BOOL GetDataFromKeypadBuffer(UINT8* const pkey, UINT8* pduration)
 {
 	// If there is new data in the buffer
    	if (kepadInReadIndex < keypadInWaitingIndex)
     {
-  		*pkeyNormal = keypadReceiveBuffer[kepadInReadIndex][0];
+  		*pkey = keypadReceiveBuffer[kepadInReadIndex][0];
 		*pduration = keypadReceiveBuffer[kepadInReadIndex][1];
       	kepadInReadIndex++;
-
+	
     	return 1;
     }
    	return 0;
 }
+
 #endif
+
+BOOL LoginPressed()
+{
+	return Login;
+}
+
+BOOL ViewIssuesPressed()
+{
+	return ViewIssues;
+}
+
+
 /*
 *------------------------------------------------------------------------------
 * void ClearKeytpadBuffer(void)
@@ -302,23 +261,12 @@ BOOL KEYPAD_read(UINT8* const pkeyNormal,UINT8* pduration)
 *
 *------------------------------------------------------------------------------
 */
-void KEYPAD_reset(void)
+void ClearKeytpadBuffer(void)
 {
 	keypadInWaitingIndex = 0;
    	kepadInReadIndex = 0;
-
-	keypad.bufferIndex = 0;
-	keypad.dataIndex = 0;
-	keypad.debounceCount = 0;
-	keypad.currentKey = 0xFF;
 }
 
-
-/*
-*------------------------------------------------------------------------------
-* Private Functions
-*------------------------------------------------------------------------------
-*/
 /*
 *------------------------------------------------------------------------------
 * BOOL scanKeypad(UINT8* const pkeyNormal)
@@ -328,151 +276,83 @@ void KEYPAD_reset(void)
 * Input		: UINT8* const pkeyNormal -  pointer to get normal key data
 *
 * Output	: BOOL - 0 - if no new key data
-*       	         1 - if there is new key data
+*       	         1 - if there is new key data	
 *
 * Note		: Must be edited as required to match Key labels.
 *------------------------------------------------------------------------------
 */
 BOOL scanKeypad(UINT8* const pkeyNormal)
 {
-	
+	static UINT8 oldKey;
 
    	UINT8 currentKey = KEYPAD_NO_NEW_DATA;
+/*
+	KBD_ROW0_DIR = PORT_IN;
+	KBD_ROW1_DIR = PORT_IN;
+	KBD_ROW2_DIR = PORT_IN;
+	KBD_ROW3_DIR = PORT_IN;
 
-	if(1 == KEYPAD_DEC_INT)
+	KBD_COL0_DIR = PORT_OUT;
+	KBD_COL1_DIR = PORT_OUT;
+	KBD_COL2_DIR = PORT_OUT;
+	KBD_COL3_DIR = PORT_IN;
+	KBD_COL4_DIR = PORT_IN;
+*/ 	
+
+
+	KBD_COL0 = 0; // Scanning column 0
+    	if (KBD_ROW0 == 0) currentKey = 0x1;
+     	if (KBD_ROW1 == 0) currentKey = 0x04;
+      	if (KBD_ROW2 == 0) currentKey = 0x07;
+      	if (KBD_ROW3 == 0) currentKey = 0x0a;
+   	KBD_COL0 = 1;
+
+	if(currentKey == KEYPAD_NO_NEW_DATA)
 	{
-		currentKey = (((KEYPAD_BCD3 << 3) |(KEYPAD_BCD2 << 2) |(KEYPAD_BCD1 << 1) | KEYPAD_BCD0) & 0x0F);
-
-
-#ifdef KEYPAD_TEST
-
-		switch( currentKey )
-		{
-			case KEYPAD_KEY00:
-				currentKey = '5';
-			break;
-			case KEYPAD_KEY01:
-				currentKey = '6';
-			break;
-			case KEYPAD_KEY02:
-				currentKey = '9';
-			break;
-			case KEYPAD_KEY03:
-				currentKey = 'A';
-			break;	
-
-			case KEYPAD_KEY04:
-				currentKey = '2';
-			break;
-			case KEYPAD_KEY05:
-				currentKey = '1';
-			break;
-			case KEYPAD_KEY06:
-				currentKey = '3';
-			break;
-			case KEYPAD_KEY07:
-				currentKey = '7';
-			break;
-
-
-
-			case KEYPAD_KEY08:
-				currentKey = '4';
-			break;
-			case KEYPAD_KEY09:
-				currentKey = '0';
-			break;
-			case KEYPAD_KEY10:
-				currentKey = 'B';
-			break;
-			case KEYPAD_KEY11:
-				currentKey = 'F';
-			break;
-
-
-			case KEYPAD_KEY12:
-				currentKey = 'C';
-			break;
-			case KEYPAD_KEY13:
-				currentKey = '8';
-			break;
-			case KEYPAD_KEY14:
-				currentKey = 'E';
-			break;
-			case KEYPAD_KEY15:
-				currentKey = 'D';
-			break;
-
-
-			default: currentKey = KEYPAD_NO_NEW_DATA;
-			break;
-		}
-#else
-
-		switch( currentKey )
-		{
-			case KEYPAD_KEY00:
-				currentKey = 5;
-			break;
-			case KEYPAD_KEY01:
-				currentKey = 6;
-			break;
-			case KEYPAD_KEY02:
-				currentKey = 9;
-			break;
-			case KEYPAD_KEY03:
-				currentKey = 10;
-			break;	
-
-			case KEYPAD_KEY04:
-				currentKey = 2;
-			break;
-			case KEYPAD_KEY05:
-				currentKey = 1;
-			break;
-			case KEYPAD_KEY06:
-				currentKey = 3;
-			break;
-			case KEYPAD_KEY07:
-				currentKey = 7;
-			break;
-
-
-
-			case KEYPAD_KEY08:
-				currentKey = 4;
-			break;
-			case KEYPAD_KEY09:
-				currentKey = 0;
-			break;
-			case KEYPAD_KEY10:
-				currentKey = 11;
-			break;
-			case KEYPAD_KEY11:
-				currentKey = 15;
-			break;
-
-
-			case KEYPAD_KEY12:
-				currentKey = 12;
-			break;
-			case KEYPAD_KEY13:
-				currentKey = 8;
-			break;
-			case KEYPAD_KEY14:
-				currentKey = 14;
-			break;
-			case KEYPAD_KEY15:
-				currentKey = 13;
-			break;
-
-
-			default: currentKey = KEYPAD_NO_NEW_DATA;
-			break;
-		}
-
-#endif
+	   	KBD_COL1 = 0; // Scanning column 1
+	   		if (KBD_ROW0 == 0) currentKey = 0x2;
+	    	if (KBD_ROW1 == 0) currentKey = 0x5;
+	      	if (KBD_ROW2 == 0) currentKey = 0x08;
+	      	if (KBD_ROW3 == 0) currentKey = 0xb;
+	   	KBD_COL1 = 1;
 	}
+	if(currentKey == KEYPAD_NO_NEW_DATA)
+	{
+	   	KBD_COL2 = 0; // Scanning column 2
+	    	if (KBD_ROW0 == 0) currentKey = 0x3;
+	      	if (KBD_ROW1 == 0) currentKey = 0x6;
+	      	if (KBD_ROW2 == 0) currentKey = 0x09;
+	      	if (KBD_ROW3 == 0) currentKey = 0x0c;
+	   	KBD_COL2 = 1;
+	}
+
+
+	
+
+/*
+	KBD_COL3 = 0; // Scanning column 3
+    	if (KBD_ROW0 == 0) currentKey = 0x16;
+      	if (KBD_ROW1 == 0) currentKey = 0x10;
+      	if (KBD_ROW2 == 0) currentKey = 0x0A;
+      	if (KBD_ROW3 == 0) currentKey = 0x04;
+   	KBD_COL3 = 1;
+
+	KBD_COL4 = 0; // Scanning column 4
+    	if (KBD_ROW0 == 0) currentKey = 0x17;
+      	if (KBD_ROW1 == 0) currentKey = 0x11;
+      	if (KBD_ROW2 == 0) currentKey = 0x0B;
+      	if (KBD_ROW3 == 0) currentKey = 0x05;
+   	KBD_COL4 = 1;
+*/
+	if(currentKey == KEYPAD_NO_NEW_DATA)
+	{
+		KBD_COL5 = 0; // Scanning column 5
+	    	if (KBD_COL3 == 0) currentKey = 0xd;
+	      	else if (KBD_COL4 == 0) currentKey = 0xE;
+	    	
+	   	KBD_COL5 = 1;
+	}
+
 
    	if (currentKey == KEYPAD_NO_NEW_DATA)
     {
@@ -492,7 +372,9 @@ BOOL scanKeypad(UINT8* const pkeyNormal)
         {
         	// New key!
          	*pkeyNormal = currentKey;
+//			putCharToLcd(currentKey + '0');
          	lastValidKey = currentKey;
+  			//PutcUARTRam(currentKey);     // Send STATUS
          	return 1;
      	}
    	}
@@ -501,6 +383,7 @@ BOOL scanKeypad(UINT8* const pkeyNormal)
    	oldKey = currentKey;
    	return 0;
 }
+
 /*
 *  End of keypad_driver.c
 */
